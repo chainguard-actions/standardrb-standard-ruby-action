@@ -1,0 +1,1 @@
+# standardrb-standard-ruby-action
