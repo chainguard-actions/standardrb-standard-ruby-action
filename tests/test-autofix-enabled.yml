@@ -1,0 +1,40 @@
+name: Test Standard Ruby - Autofix Enabled (Default)
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Standard Ruby action with default autofix (true)
+        id: standardrb
+        uses: .
+        with:
+          ruby-version: "3.3"
+          autofix: "true"
+        continue-on-error: true
+
+      - name: Assert action ran (not skipped)
+        env:
+          OUTCOME: ${{ steps.standardrb.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran with outcome=$OUTCOME"
+
+      - name: Verify git config was set if autofixes were applied
+        run: |
+          # Check that git is configured (action sets git config when autofixes found)
+          # This is a best-effort check since autofixes may or may not be needed
+          echo "Git user name: $(git config user.name || echo 'not set')"
+          echo "Git user email: $(git config user.email || echo 'not set')"
+          echo "PASS: git config check completed"

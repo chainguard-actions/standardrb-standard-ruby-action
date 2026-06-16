@@ -1,0 +1,52 @@
+name: Test Standard Ruby - Autofix Disabled
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Record initial git log
+        id: before
+        run: |
+          COMMIT=$(git rev-parse HEAD)
+          echo "commit=$COMMIT" >> $GITHUB_OUTPUT
+          echo "Initial commit: $COMMIT"
+
+      - name: Run Standard Ruby action with autofix disabled
+        id: standardrb
+        uses: .
+        with:
+          ruby-version: "3.3"
+          autofix: "false"
+        continue-on-error: true
+
+      - name: Assert action ran (not skipped)
+        env:
+          OUTCOME: ${{ steps.standardrb.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran with outcome=$OUTCOME"
+
+      - name: Assert no autofix commits were made
+        env:
+          BEFORE_COMMIT: ${{ steps.before.outputs.commit }}
+        run: |
+          AFTER_COMMIT=$(git rev-parse HEAD)
+          echo "Before: $BEFORE_COMMIT"
+          echo "After:  $AFTER_COMMIT"
+          if [ "$BEFORE_COMMIT" != "$AFTER_COMMIT" ]; then
+            echo "FAIL: autofix=false but git commits were made"
+            exit 1
+          fi
+          echo "PASS: no commits were made (autofix disabled)"
