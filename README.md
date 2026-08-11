@@ -10,6 +10,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v1.2.0 | [`v1.2.0`](https://github.com/chainguard-actions/standardrb-standard-ruby-action/tree/v1.2.0) | [`b8c2923`](https://github.com/standardrb/standard-ruby-action/commit/b8c2923f71be9de1696f062181ffb028a5488e0f) |
 | v1.5.0 | [`v1.5.0`](https://github.com/chainguard-actions/standardrb-standard-ruby-action/tree/v1.5.0) | [`eecb3f7`](https://github.com/standardrb/standard-ruby-action/commit/eecb3f730879f5b8830705348c2961e5aa26de78) |
+| v1.6.0 | [`v1.6.0`](https://github.com/chainguard-actions/standardrb-standard-ruby-action/tree/v1.6.0) | [`df5152f`](https://github.com/standardrb/standard-ruby-action/commit/df5152f6106147e13feb6ee0fa820b0d435cb8cd) |
 
 ## Privacy
 
