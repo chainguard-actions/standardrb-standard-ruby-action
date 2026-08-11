@@ -1,15 +1,94 @@
-# standardrb/standard-ruby-action
+# Standard Ruby GitHub Action
 
-A GitHub Action that lints and auto-fixes your Ruby code with Standard Ruby
+A GitHub Action to run [Standard Ruby](https://github.com/standardrb/standard)
+against your code. Here's what it does:
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/standardrb/standard-ruby-action](https://github.com/standardrb/standard-ruby-action).
+1. Runs `bundle exec standardrb --fix` on the root directory of your repo
+2. If any errors were auto-fixable, it commits those changes back to the repo
+3. If any errors remain, it fails the build with annotations for each failure
 
-## Versions
+## Usage
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.2.0 | [`v1.2.0`](https://github.com/chainguard-actions/standardrb-standard-ruby-action/tree/v1.2.0) | [`b8c2923`](https://github.com/standardrb/standard-ruby-action/commit/b8c2923f71be9de1696f062181ffb028a5488e0f) |
-| v1.5.0 | [`v1.5.0`](https://github.com/chainguard-actions/standardrb-standard-ruby-action/tree/v1.5.0) | [`eecb3f7`](https://github.com/standardrb/standard-ruby-action/commit/eecb3f730879f5b8830705348c2961e5aa26de78) |
+### Creating a Standard Ruby workflow:
+
+To separate Standard Ruby linting and formatting from your main test suite, you
+can add it in a standalone workflow:
+
+```yaml
+name: Standard Ruby
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: write
+    steps:
+    - name: Standard Ruby
+      uses: standardrb/standard-ruby-action@v1
+```
+
+### Adding to an existing workflow:
+
+You can add the following to your existing GitHub Action workflow:
+
+```yaml
+- name: Standard Ruby
+  uses: standardrb/standard-ruby-action@v1
+```
+
+This will require you to add these permissions at the top-level of your workflow
+(for example, after specifying the operating system via `runs_on`):
+
+```yaml
+runs-on: ubuntu-latest
+permissions:
+  checks: write
+  contents: read
+```
+
+## Options
+
+- `ruby-version` - If your project has a `.ruby-version` file, this Action will use that version of Ruby. If not, this will be forwarded to the [ruby/setup-ruby](https://github.com/ruby/setup-ruby) action, so it takes the same values.
+- `autofix` - If set to `false`, the action will not attempt to auto-fix any errors. Defaults to `true`.
+- `workdir` - If set the action will descend to this directory before running `bundle exec standardrb …` and other relevant setup commands. Defaults to `.`.
+
+Example with options set:
+
+```yaml
+- name: Standard Ruby
+  uses: standardrb/standard-ruby-action@v1
+  with:
+    ruby-version: '3.3'
+    autofix: false
+    workdir: my/app/subdirectory
+```
+
+## Screenshots
+
+**[Update 6/17/2024: the current v1 release doesn't produce annotations like
+this, unfortunately. See
+[#16](https://github.com/standardrb/standard-ruby-action/issues/16)]**
+
+![StandardRB Action Checks Overview](screenshots/check-overview.png)
+![StandardRB Action File Annotation](screenshots/file-annotation.png)
+
+## Code of Conduct
+
+This project follows Test Double's [code of
+conduct](https://testdouble.com/code-of-conduct) for all community interactions,
+including (but not limited to) one-on-one communications, public posts/comments,
+code reviews, pull requests, and GitHub issues. If violations occur, Test Double
+will take any action they deem appropriate for the infraction, up to and
+including blocking a user from the organization's repositories.
+
+## Acknowledgements
+
+A big thanks to [Andrew Mason](https://github.com/andrewmcodes) for kicking off
+this project as
+[andrewmcodes/standardrb-action](https://github.com/andrewmcodes/standardrb-action)!
 
 ## Privacy
 

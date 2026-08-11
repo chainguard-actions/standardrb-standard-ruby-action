@@ -1,0 +1,36 @@
+name: Release
+on:
+  push: { tags: "v*.*.*" }
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  # Create a GitHub Release for each pushed git-tag
+  github:
+    permissions: { contents: write }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with: { egress-policy: audit }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: |
+          args=("$tag" --generate-notes)
+          [[ "$tag" == *-* ]] && args+=(--prerelease)
+          gh release view "$tag" || gh release create "${args[@]}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          tag: ${{ github.ref_name }}
+
+  # Bump the 'vMajor' ref to latest patch|minor version
+  vMajor-ref:
+    if: ${{ !contains(github.ref, '-') }} # skip prereleases
+    permissions: { contents: write }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with: { egress-policy: audit }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # FIXME pushes branch instead of tag because github bug:
+      # https://github.com/orgs/community/discussions/163366
+      - run: git push -f origin "HEAD:refs/heads/${GITHUB_REF_NAME%%.*}"

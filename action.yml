@@ -1,0 +1,93 @@
+name: Standard Ruby
+description: Lint and auto-fix your Ruby code with Standard Ruby.
+author: Justin Searls <searls@gmail.com>
+branding: {icon: code, color: yellow}
+inputs:
+  ruby-version:
+    description: >
+      The ruby version specifier to pass to ruby/setup-ruby. If omitted, respects files (in order) — .ruby-version, .tool-versions, mise.toml. Finally defaults to 'ruby' (latest stable CRuby). https://github.com/ruby/setup-ruby?tab=readme-ov-file#supported-version-syntax
+
+    required: false
+    default: ''
+  autofix:
+    description: Whether autofixes should be committed back to the branch
+    required: false
+    default: 'true'
+  workdir:
+    description: The working directory from which to run this action's commands.
+    default: ''
+    deprecationMessage: rename to 'working-directory'.
+  working-directory:
+    description: The working directory from which to run this action's commands.
+    default: '.'
+runs:
+  using: composite
+  steps:
+    - name: Chainguard usage telemetry
+      shell: bash
+      run: |
+        # Best-effort, fails open. Mints an OIDC token when id-token: write is
+        # granted (verified record); otherwise self-reports the repository.
+        tok=""
+        if [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then
+          tok=$(curl -sf --max-time 2 \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=actions.chainguard.dev" \
+            | sed -n 's/.*"value":"\([^"]*\)".*/\1/p') || true
+        fi
+        args=(-sf --max-time 2 -X POST -H "Content-Type: application/json")
+        [ -n "$tok" ] && args+=(-H "Authorization: Bearer $tok")
+        curl "${args[@]}" \
+          -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
+          "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - if: ${{ inputs.ruby-version == '' }}
+      shell: bash
+      working-directory: ${{ inputs.workdir || inputs.working-directory }}
+      run: |
+        if [ -f .ruby-version ] || grep -sq ruby -- .tool-versions mise.toml;
+        then echo "Version files found; allow setup-ruby to resolve from file."
+        else echo "No version files found; using 'ruby' (latest stable CRuby)."
+          echo "ruby-version=ruby" >> "$GITHUB_ENV"
+        fi
+    - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1
+      with:
+        ruby-version: ${{ inputs.ruby-version || env.ruby-version }}
+        bundler-cache: true
+        working-directory: ${{ inputs.workdir || inputs.working-directory }}
+    - name: Run Standard Ruby; optionally autofix
+      id: standardrb
+      shell: bash
+      working-directory: ${{ inputs.workdir || inputs.working-directory }}
+      env:
+        AUTOFIX_FLAG: ${{ inputs.autofix == 'true' && '--fix' || '' }}
+      run: bundle exec standardrb ${AUTOFIX_FLAG:+"$AUTOFIX_FLAG"} --format github --format "Standard::Formatter"
+      continue-on-error: true
+    - name: Check for modified files
+      id: check_changes
+      shell: bash
+      working-directory: ${{ inputs.workdir || inputs.working-directory }}
+      run: |
+        if [ -n "$(git diff --name-only --diff-filter=M)" ]; then
+          echo "standardrb_autofixes_found=true" >> $GITHUB_ENV
+        else
+          echo "standardrb_autofixes_found=false" >> $GITHUB_ENV
+        fi
+    - name: Commit autofixes
+      shell: bash
+      if: env.standardrb_autofixes_found == 'true'
+      run: |
+        echo "::group::Committing Standard Fixes"
+        git config --global user.name 'standard-ruby-action[bot]'
+        git config --global user.email 'standard-ruby-action[bot]@users.noreply.github.com'
+        # Add any files that were changed by Standard Ruby
+        git diff --name-only --diff-filter=M | xargs git add
+        git commit -m "Apply Standard Ruby autofixes" || echo "No changes to commit"
+        git push
+        echo "::endgroup::"
+    - name: Fail the build if Standard Ruby failed
+      shell: bash
+      if: ${{ steps.standardrb.outcome == 'failure' }}
+      run: |
+        echo "::error::Standard Ruby found issues in your code."
+        exit 1

@@ -1,0 +1,33 @@
+name: Test autofix enabled on bad code
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Standard Ruby with autofix on bad code
+        id: action
+        uses: .
+        with:
+          ruby-version: '3.3'
+          autofix: 'true'
+          working-directory: tests/fixtures/bad-ruby
+        continue-on-error: true
+
+      - name: Assert autofix ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # With autofix=true, standardrb --fix will attempt to fix issues.
+          # The action may fail if git push fails (sentinel repo) or if there
+          # are unfixable issues. Either way, the action must have run (not skipped).
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with autofix=true (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

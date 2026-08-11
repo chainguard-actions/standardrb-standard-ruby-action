@@ -1,0 +1,21 @@
+name: Test deprecated workdir input
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Standard Ruby with deprecated workdir input
+        id: action
+        uses: .
+        with:
+          ruby-version: '3.3'
+          autofix: 'false'
+          workdir: tests/fixtures/good-ruby
+
+      - name: Assert action succeeded with deprecated workdir input
+        run: |
+          echo "PASS: action correctly used deprecated workdir input and found no issues"
