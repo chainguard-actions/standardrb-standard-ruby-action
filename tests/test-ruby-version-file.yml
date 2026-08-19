@@ -5,31 +5,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_REF: refs/heads/act-harness
-      GITHUB_EVENT_NAME: push
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Set up fixture Ruby project with .ruby-version file
-        run: |
-          mkdir -p /tmp/ruby-project-version
-          printf 'source "https://rubygems.org"\ngem "standard"\n' > /tmp/ruby-project-version/Gemfile
-          printf 'puts "hello"\n' > /tmp/ruby-project-version/hello.rb
-          echo "3.2" > /tmp/ruby-project-version/.ruby-version
-          cd /tmp/ruby-project-version
-          git init
-          git config user.email "test@test.com"
-          git config user.name "Test"
-          git add .
-          git commit -m "initial"
 
       - id: action
         uses: .
         with:
           autofix: 'false'
-          workdir: /tmp/ruby-project-version
+          workdir: tests/fixtures/ruby-version-file
 
-      - name: Assert action completed successfully with .ruby-version file
+      - name: Assert action passed using .ruby-version file
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
-          echo "PASS: action completed without error using .ruby-version file"
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed when .ruby-version file is present, got: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly used .ruby-version file"

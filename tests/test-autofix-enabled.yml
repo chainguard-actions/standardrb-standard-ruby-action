@@ -1,0 +1,27 @@
+name: Test autofix enabled with already-clean Ruby code
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          ruby-version: '3.3'
+          autofix: 'true'
+          workdir: tests/fixtures/clean-ruby
+
+      - name: Assert action passed with autofix enabled on clean code
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed with clean Ruby code and autofix enabled, got: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action succeeded with autofix enabled on clean code"

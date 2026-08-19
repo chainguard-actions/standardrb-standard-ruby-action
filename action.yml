@@ -43,13 +43,12 @@ runs:
         if [ -f .ruby-version ]; then
           echo "Using Ruby version from .ruby-version file"
           RUBY_VERSION=$(cat .ruby-version)
-          safe=$(printf '%s' "$RUBY_VERSION" | tr -d '\n\r')
-          echo "ruby-version=$safe" >> $GITHUB_ENV
+          echo "ruby-version=$RUBY_VERSION" >> $GITHUB_ENV
         else
           echo "No .ruby-version file found, using default"
         fi
     - name: Set up Ruby
-      uses: ruby/setup-ruby@89f90524b88a01fe6e0b732220432cc6142926af # v1
+      uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
       with:
         ruby-version: ${{ env.ruby-version || inputs.ruby-version }}
         bundler-cache: true
@@ -61,11 +60,9 @@ runs:
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
-        args=()
-        if [ "$AUTOFIX" = "true" ]; then
-          args+=(--fix)
-        fi
-        bundle exec standardrb "${args[@]}" --format github --format "Standard::Formatter"
+        fix_flag=""
+        if [[ "$AUTOFIX" == 'true' ]]; then fix_flag="--fix"; fi
+        bundle exec standardrb $fix_flag --format github --format "Standard::Formatter"
       continue-on-error: true
     - name: Check for modified files
       id: check_changes
