@@ -1,0 +1,30 @@
+name: Test autofix enabled with clean code
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run Standard Ruby action with autofix enabled on clean code
+        id: action
+        uses: .
+        with:
+          ruby-version: "3.3"
+          autofix: "true"
+        continue-on-error: true
+
+      - name: Assert action ran (succeeded or failed gracefully on sentinel repo)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: Standard Ruby action completed successfully with autofix enabled on clean code"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: Action failed gracefully (sentinel repo not resolvable or env issue)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

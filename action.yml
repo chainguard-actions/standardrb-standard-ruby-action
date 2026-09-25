@@ -31,9 +31,9 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout code
-      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
     - name: Set up Ruby
-      uses: ruby/setup-ruby@89f90524b88a01fe6e0b732220432cc6142926af # v1
+      uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
@@ -41,8 +41,10 @@ runs:
       id: standardrb
       shell: bash
       env:
-        AUTOFIX_FLAG: ${{ inputs.autofix == 'true' && '--fix' || '' }}
-      run: bundle exec standardrb ${AUTOFIX_FLAG:+"$AUTOFIX_FLAG"} --format github --format "Standard::Formatter"
+        AUTOFIX: ${{ inputs.autofix }}
+      run: |
+        if [ "$AUTOFIX" = 'true' ]; then EXTRA_ARGS='--fix'; else EXTRA_ARGS=''; fi
+        bundle exec standardrb ${EXTRA_ARGS:+"$EXTRA_ARGS"} --format github --format "Standard::Formatter"
       continue-on-error: true
     - name: Check for modified files
       id: check_changes
