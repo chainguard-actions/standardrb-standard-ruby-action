@@ -16,33 +16,20 @@ Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3
 
 ### unpinned-uses (severity: high)
 
-Two `uses:` references in action.yml use mutable version tags instead of full 40-character SHA commit hashes, making the action vulnerable to supply-chain attacks if the referenced tag is moved or hijacked:
-- `actions/checkout@v4` (mutable tag `v4`)
-- `ruby/setup-ruby@v1` (mutable tag `v1`)
-These should be pinned to their full SHA digests, e.g. `actions/checkout@<40-hex-sha> # v4`.
+Two `uses:` references in action.yml are pinned to mutable version tags instead of immutable 40-character SHA digests. This exposes the action to supply-chain attacks if the upstream tag is moved or the repository is compromised. Failing references: `actions/checkout@v4` and `ruby/setup-ruby@v1`. Both should be pinned to their full commit SHA (e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4`).
 
 Locations:
 
-- `action.yml:20`
-- `action.yml:23`
+- `action.yml:19`
+- `action.yml:22`
 
 ### script-injection (severity: high)
 
-Sub-rule (a) violation: The `run:` block for the 'Run Standard Ruby with autofix' step directly interpolates a GitHub Actions expression inside the shell command string:
-
-  run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"
-
-The expression `${{ inputs.autofix == 'true' && '--fix' || '' }}` is expanded by the Actions template engine before the shell ever sees the command. An attacker who controls the `autofix` input (e.g. via `workflow_dispatch` or a calling workflow) could inject shell metacharacters. The fix is to move the input into an `env:` variable and reference it as a quoted shell variable, e.g.:
-
-  env:
-    AUTOFIX: ${{ inputs.autofix }}
-  run: |
-    if [ "$AUTOFIX" = 'true' ]; then EXTRA_ARGS='--fix'; else EXTRA_ARGS=''; fi
-    bundle exec standardrb $EXTRA_ARGS --format github --format "Standard::Formatter"
+Sub-rule (a): A `${{ ... }}` expression is interpolated directly inside a `run:` shell command string. The step 'Run Standard Ruby with autofix' contains: `bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"`. The value of `inputs.autofix` is controlled by the caller and is substituted into the shell command by the YAML template engine before the shell processes it. An attacker could supply a value containing shell metacharacters (e.g. `'; malicious-command #`) to achieve arbitrary command execution. The fix is to move the input into an `env:` variable and reference it as a quoted shell variable: `env: AUTOFIX: ${{ inputs.autofix }}` then use `"$AUTOFIX"` inside the run block.
 
 Locations:
 
-- `action.yml:30`
+- `action.yml:28`
 
 ### static-inline-injection (severity: high)
 
@@ -60,5 +47,5 @@ Locations:
 
 **Notes:**
 
-Fixed all three findings in hardened/action/action.yml: (1) Pinned actions/checkout@v4 to SHA 11d5960a326750d5838078e36cf38b85af677262 # v4; (2) Pinned ruby/setup-ruby@v1 to SHA 14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1; (3) Eliminated script injection by moving inputs.autofix into an env: variable (AUTOFIX) and replacing the inline ${{ }} expression with a safe shell conditional that sets EXTRA_ARGS, using ${EXTRA_ARGS:+"$EXTRA_ARGS"} to avoid passing an empty argument when autofix is not 'true'.
+1. Pinned actions/checkout@v4 to commit SHA 11d5960a326750d5838078e36cf38b85af677262 and ruby/setup-ruby@v1 to commit SHA 14594264cd68ce8a2345dd349bc3d138a4ef85c8, preserving the original tag in a comment. 2. Fixed script injection (both findings): removed the ${{ inputs.autofix == 'true' && '--fix' || '' }} expression from the run: block by moving inputs.autofix into an env: variable (AUTOFIX: ${{ inputs.autofix }}) and using a plain bash if/else to conditionally add --fix, eliminating any possibility of shell metacharacter injection.
 
