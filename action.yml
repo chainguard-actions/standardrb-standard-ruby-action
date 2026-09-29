@@ -43,9 +43,11 @@ runs:
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
-        args=""
-        if [ "$AUTOFIX" = "true" ]; then args="--fix"; fi
-        bundle exec standardrb $args --format github --format "Standard::Formatter"
+        if [[ "$AUTOFIX" == 'true' ]]; then
+          bundle exec standardrb --fix --format github --format "Standard::Formatter"
+        else
+          bundle exec standardrb --format github --format "Standard::Formatter"
+        fi
       continue-on-error: true
     - name: Check for modified files
       id: check_changes
