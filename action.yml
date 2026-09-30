@@ -31,7 +31,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout code
-      uses: chainguard-actions/actions-checkout@59b7218bfc2eaabc464f1254f6e1dac5bda91d94 # v4
+      uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4
     - name: Set up Ruby
       uses: chainguard-actions/ruby-setup-ruby@ac1e742532b69c4dd7bd406d6257f4ea94aef5f7 # v1
       with:
@@ -43,11 +43,9 @@ runs:
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
-        if [[ "$AUTOFIX" == 'true' ]]; then
-          bundle exec standardrb --fix --format github --format "Standard::Formatter"
-        else
-          bundle exec standardrb --format github --format "Standard::Formatter"
-        fi
+        flag=""
+        if [ "$AUTOFIX" = "true" ]; then flag="--fix"; fi
+        bundle exec standardrb ${flag:+"$flag"} --format github --format "Standard::Formatter"
       continue-on-error: true
     - name: Check for modified files
       id: check_changes
