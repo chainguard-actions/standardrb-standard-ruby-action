@@ -16,22 +16,20 @@ Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3
 
 ### script-injection (severity: high)
 
-Rule (a) violation: A GitHub Actions expression `${{ inputs.autofix == 'true' && '--fix' || '' }}` is directly interpolated inside a `run:` shell command string. The value of `inputs.autofix` is caller-controlled and is expanded by the template engine before the shell processes it, enabling script injection. The offending line is: `run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"`. Fix: move the conditional logic into the shell script using an `env:` variable and quote it properly.
+Sub-rule (a): A ${{ }} expression is interpolated directly inside a `run:` shell command string. The expression `${{ inputs.autofix == 'true' && '--fix' || '' }}` is substituted by the YAML template engine before the shell executes the command, allowing an attacker who controls the `inputs.autofix` value to inject arbitrary shell commands. Offending line: `run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"`
 
 Locations:
 
-- `action.yml:30`
+- `action.yml:29`
 
 ### unpinned-uses (severity: high)
 
-Two `uses:` references in action.yml use mutable tag refs instead of pinned 40-character commit SHA digests, making the action vulnerable to supply-chain attacks if the upstream tag is moved or overwritten:
-- `uses: actions/checkout@v4` (line 20) — should be pinned to a full SHA, e.g. `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4`
-- `uses: ruby/setup-ruby@v1` (line 23) — should be pinned to a full SHA
+Two `uses:` references in action.yml use mutable tag refs instead of pinned 40-character SHA commit digests, making the action vulnerable to supply-chain attacks if the upstream tag is moved or overwritten. Failing references: `actions/checkout@v4` (line 19) and `ruby/setup-ruby@v1` (line 22).
 
 Locations:
 
-- `action.yml:20`
-- `action.yml:23`
+- `action.yml:19`
+- `action.yml:22`
 
 ### static-inline-injection (severity: high)
 
@@ -49,5 +47,8 @@ Locations:
 
 **Notes:**
 
-Fixed all three findings in action.yml: (1) Pinned actions/checkout@v4 to SHA 11d5960a326750d5838078e36cf38b85af677262; (2) Pinned ruby/setup-ruby@v1 to SHA e81a8fa391b11a595c1b7ed84177cc0fe02faf83; (3) Removed the ${{ inputs.autofix == 'true' && '--fix' || '' }} expression from the run: block by moving inputs.autofix into an env: variable (AUTOFIX) and implementing the conditional flag logic in the shell script itself.
+Fixed all three findings in action.yml:
+1. Pinned actions/checkout@v4 to SHA 11d5960a326750d5838078e36cf38b85af677262 # v4
+2. Pinned ruby/setup-ruby@v1 to SHA 651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1
+3. Removed the inline ${{ inputs.autofix == 'true' && '--fix' || '' }} expression from the run: block. Instead, the raw input is captured in an env: var (AUTOFIX: ${{ inputs.autofix }}) and the shell script uses a plain if/else to conditionally pass --fix to standardrb, eliminating the injection risk.
 

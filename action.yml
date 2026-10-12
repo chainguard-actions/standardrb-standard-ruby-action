@@ -33,7 +33,7 @@ runs:
     - name: Checkout code
       uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4
     - name: Set up Ruby
-      uses: chainguard-actions/ruby-setup-ruby@aeecb34a78c0986a4abfb6814188fa862f076d64 # v1
+      uses: chainguard-actions/ruby-setup-ruby@6d5fe00e388f0c5bd739df0bba8ed35deb474202 # v1
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
@@ -43,11 +43,11 @@ runs:
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
-        fix_flag=""
         if [ "$AUTOFIX" = "true" ]; then
-          fix_flag="--fix"
+          bundle exec standardrb --fix --format github --format "Standard::Formatter"
+        else
+          bundle exec standardrb --format github --format "Standard::Formatter"
         fi
-        bundle exec standardrb $fix_flag --format github --format "Standard::Formatter"
       continue-on-error: true
     - name: Check for modified files
       id: check_changes
