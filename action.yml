@@ -1,6 +1,7 @@
 name: 'Standard Ruby'
 description: 'A GitHub Action that lints and auto-fixes your Ruby code with Standard Ruby'
 author: 'Justin Searls <searls@gmail.com>'
+
 inputs:
   ruby-version:
     description: 'The Ruby version specifier to pass to ruby/setup-ruby'
@@ -10,8 +11,10 @@ inputs:
     description: 'Whether autofixes should be committed back to the branch'
     required: false
     default: 'true'
+
 runs:
   using: composite
+
   steps:
     - name: Chainguard usage telemetry
       shell: bash
@@ -32,23 +35,26 @@ runs:
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout code
       uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4
+
     - name: Set up Ruby
-      uses: chainguard-actions/ruby-setup-ruby@6d5fe00e388f0c5bd739df0bba8ed35deb474202 # v1
+      uses: chainguard-actions/ruby-setup-ruby@1f0414af8d2a86243b2d6ac83b32c18de69e7822 # v1
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
+
     - name: Run Standard Ruby with autofix
       id: standardrb
       shell: bash
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
+        fix_flag=""
         if [ "$AUTOFIX" = "true" ]; then
-          bundle exec standardrb --fix --format github --format "Standard::Formatter"
-        else
-          bundle exec standardrb --format github --format "Standard::Formatter"
+          fix_flag="--fix"
         fi
+        bundle exec standardrb ${fix_flag:+"$fix_flag"} --format github --format "Standard::Formatter"
       continue-on-error: true
+
     - name: Check for modified files
       id: check_changes
       shell: bash
@@ -58,6 +64,7 @@ runs:
         else
           echo "standardrb_autofixes_found=false" >> $GITHUB_ENV
         fi
+
     - name: Commit autofixes
       shell: bash
       if: env.standardrb_autofixes_found == 'true'
@@ -70,12 +77,14 @@ runs:
         git commit -m "Apply Standard Ruby autofixes" || echo "No changes to commit"
         git push
         echo "::endgroup::"
+
     - name: Fail the build if Standard Ruby failed
       shell: bash
       if: ${{ steps.standardrb.outcome == 'failure' }}
       run: |
         echo "::error::Standard Ruby found issues in your code."
         exit 1
+
 branding:
   icon: 'code'
   color: 'gray-dark'
