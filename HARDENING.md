@@ -10,13 +10,13 @@
 
 **Harden Agent Version:** `2`
 
-Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3 finding(s) were identified and resolved across 2 iteration(s).
+Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-Two composite steps pin actions to a version tag instead of a full commit SHA: 'uses: actions/checkout@v4' (line 20) and 'uses: ruby/setup-ruby@v1' (line 23).
+Composite action steps reference actions by mutable tags instead of 40-char commit SHAs: 'uses: actions/checkout@v4' (line 20) and 'uses: ruby/setup-ruby@v1' (line 23).
 
 Locations:
 
@@ -25,7 +25,7 @@ Locations:
 
 ### script-injection (severity: high)
 
-Rule (a): a ${{ }} expression is placed directly inside a run: script: "run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format \"Standard::Formatter\"". The rule bans any ${{ }} expression inside run:. The fix is to pass inputs.autofix in through an env: variable and check it with quotes in the shell.
+Sub-rule (a): a GitHub Actions expression is placed directly in a run: script. Offending line: run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter". Move the input into an env: variable and branch on it in the shell instead.
 
 Locations:
 
@@ -47,13 +47,5 @@ Locations:
 
 **Notes:**
 
-Pinned actions/checkout@v4 to 11d5960a326750d5838078e36cf38b85af677262 and ruby/setup-ruby@v1 to b1da4809b005e0178fe08a1d57317bffc00b7b4c, with the tag kept as a trailing comment on each. Moved inputs.autofix into the env var INPUT_AUTOFIX. The run script now checks it with [ "$INPUT_AUTOFIX" = "true" ] and adds --fix through a bash array. When autofix is off, the empty array adds no argument, so the command gets the same arguments as before. standardrb is still the last command in the step, so the step's exit status and continue-on-error work as before. Not tested by running the action.
-
-### Iteration 2
-
-**Fixes applied:** script-injection, static-inline-injection
-
-**Notes:**
-
-Moved inputs.autofix into the AUTOFIX env var. The shell now picks the --fix flag itself and passes it with ${FIX:+"$FIX"}, so no empty argument is added when autofix is off. Behavior is unchanged from upstream.
+Pinned actions/checkout@v4 and ruby/setup-ruby@v1 to full SHAs (tag kept as comment). Moved inputs.autofix into env INPUT_AUTOFIX and built the optional --fix flag with a bash array so no empty arg is passed when autofix is disabled.
 
