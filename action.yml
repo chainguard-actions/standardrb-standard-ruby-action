@@ -37,7 +37,7 @@ runs:
       uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4
 
     - name: Set up Ruby
-      uses: chainguard-actions/ruby-setup-ruby@4c49c4345951488198bde70e2aeac8aa20904a56 # v1
+      uses: chainguard-actions/ruby-setup-ruby@c23a8b4c66921575db6eb984a522b7ca1b39ff48 # v1
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
@@ -46,10 +46,10 @@ runs:
       id: standardrb
       shell: bash
       env:
-        INPUT_AUTOFIX: ${{ inputs.autofix }}
+        AUTOFIX: ${{ inputs.autofix }}
       run: |
         fix_args=()
-        if [ "$INPUT_AUTOFIX" = "true" ]; then
+        if [ "$AUTOFIX" = "true" ]; then
           fix_args+=(--fix)
         fi
         bundle exec standardrb "${fix_args[@]}" --format github --format "Standard::Formatter"

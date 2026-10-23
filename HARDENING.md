@@ -16,7 +16,7 @@ Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3
 
 ### unpinned-uses (severity: high)
 
-Composite action steps reference actions by mutable tags instead of 40-char commit SHAs: 'uses: actions/checkout@v4' (line 20) and 'uses: ruby/setup-ruby@v1' (line 23).
+Two composite steps reference actions by a mutable tag instead of a 40-character commit SHA: 'uses: actions/checkout@v4' and 'uses: ruby/setup-ruby@v1'.
 
 Locations:
 
@@ -25,11 +25,11 @@ Locations:
 
 ### script-injection (severity: high)
 
-Sub-rule (a): a GitHub Actions expression is placed directly in a run: script. Offending line: run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter". Move the input into an env: variable and branch on it in the shell instead.
+Sub-rule (a): a ${{ }} expression is written directly into a run: script. Offending line: 'run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"'. The expression only resolves to '--fix' or '', but any ${{ }} inside run: is a finding under this check. Pass the value through an env: variable instead, e.g. AUTOFIX: ${{ inputs.autofix }}, then use if [ "$AUTOFIX" = "true" ] in the script.
 
 Locations:
 
-- `action.yml:30`
+- `action.yml:31`
 
 ### static-inline-injection (severity: high)
 
@@ -47,5 +47,5 @@ Locations:
 
 **Notes:**
 
-Pinned actions/checkout@v4 and ruby/setup-ruby@v1 to full SHAs (tag kept as comment). Moved inputs.autofix into env INPUT_AUTOFIX and built the optional --fix flag with a bash array so no empty arg is passed when autofix is disabled.
+Pinned actions/checkout@v4 to 11d5960a326750d5838078e36cf38b85af677262 and ruby/setup-ruby@v1 to 26e5b7d197ebf60545ee9667bcbace0be11ccaec. The autofix input now reaches the step through env AUTOFIX. A bash array adds --fix only when AUTOFIX is 'true', so when autofix is off, standardrb gets no empty argument.
 
