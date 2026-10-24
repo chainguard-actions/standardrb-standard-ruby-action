@@ -10,13 +10,13 @@
 
 **Harden Agent Version:** `2`
 
-Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
+Action **standardrb--standard-ruby-action/v1.2.0** was hardened automatically. 3 finding(s) were identified and resolved across 3 iteration(s).
 
 ## Findings Fixed
 
 ### unpinned-uses (severity: high)
 
-Two composite steps reference actions by a mutable tag instead of a 40-character commit SHA: 'uses: actions/checkout@v4' and 'uses: ruby/setup-ruby@v1'.
+Two composite action steps point to mutable tags instead of full 40-character commit SHAs: 'uses: actions/checkout@v4' (line 20) and 'uses: ruby/setup-ruby@v1' (line 23).
 
 Locations:
 
@@ -25,11 +25,11 @@ Locations:
 
 ### script-injection (severity: high)
 
-Sub-rule (a): a ${{ }} expression is written directly into a run: script. Offending line: 'run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter"'. The expression only resolves to '--fix' or '', but any ${{ }} inside run: is a finding under this check. Pass the value through an env: variable instead, e.g. AUTOFIX: ${{ inputs.autofix }}, then use if [ "$AUTOFIX" = "true" ] in the script.
+Sub-rule (a): a GitHub Actions expression is placed directly inside a run: script. Offending line: run: bundle exec standardrb ${{ inputs.autofix == 'true' && '--fix' || '' }} --format github --format "Standard::Formatter". Fix: compute the flag in the shell from an env var (e.g. env: AUTOFIX: ${{ inputs.autofix }}, then if [ "$AUTOFIX" = "true" ]; then ...).
 
 Locations:
 
-- `action.yml:31`
+- `action.yml:30`
 
 ### static-inline-injection (severity: high)
 
@@ -47,5 +47,21 @@ Locations:
 
 **Notes:**
 
-Pinned actions/checkout@v4 to 11d5960a326750d5838078e36cf38b85af677262 and ruby/setup-ruby@v1 to 26e5b7d197ebf60545ee9667bcbace0be11ccaec. The autofix input now reaches the step through env AUTOFIX. A bash array adds --fix only when AUTOFIX is 'true', so when autofix is off, standardrb gets no empty argument.
+Pinned actions/checkout to 11d5960a326750d5838078e36cf38b85af677262 (v4) and ruby/setup-ruby to 7f797815d8adceb1c412e7abefdd1ab4abc47a5f (v1). Moved inputs.autofix into env AUTOFIX. The --fix flag is now added in bash through an array only when AUTOFIX is 'true', so it is left out completely otherwise, as upstream did.
+
+### Iteration 2
+
+**Fixes applied:** unpinned-uses
+
+**Notes:**
+
+Pinned actions/checkout@v4 to 11d5960a326750d5838078e36cf38b85af677262 and ruby/setup-ruby@v1 to 7f797815d8adceb1c412e7abefdd1ab4abc47a5f in action.yml, keeping tag comments.
+
+### Iteration 3
+
+**Fixes applied:** unpinned-uses
+
+**Notes:**
+
+Pinned ruby/setup-ruby@v1 to 7f797815d8adceb1c412e7abefdd1ab4abc47a5f (# v1) in action.yml. actions/checkout was already pinned in a previous iteration.
 

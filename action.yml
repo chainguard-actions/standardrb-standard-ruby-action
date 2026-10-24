@@ -37,7 +37,7 @@ runs:
       uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4
 
     - name: Set up Ruby
-      uses: chainguard-actions/ruby-setup-ruby@c23a8b4c66921575db6eb984a522b7ca1b39ff48 # v1
+      uses: chainguard-actions/ruby-setup-ruby@d7e5781cc3789bb3f26f467bc26a3830fba61095 # v1
       with:
         ruby-version: ${{ inputs.ruby-version }}
         bundler-cache: true
