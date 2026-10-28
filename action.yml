@@ -1,6 +1,7 @@
 name: Standard Ruby
 description: Lint and auto-fix your Ruby code with Standard Ruby.
 author: Justin Searls <searls@gmail.com>
+
 inputs:
   ruby-version:
     description: The Ruby version specifier to pass to ruby/setup-ruby
@@ -13,8 +14,10 @@ inputs:
   workdir:
     description: The working directory from which to run this action's commands. Default '.'
     default: '.'
+
 runs:
   using: composite
+
   steps:
     - name: Chainguard usage telemetry
       shell: bash
@@ -34,7 +37,8 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout code
-      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
     - name: Check for .ruby-version file
       id: use_ruby_version_or_default
       shell: bash
@@ -43,16 +47,19 @@ runs:
         if [ -f .ruby-version ]; then
           echo "Using Ruby version from .ruby-version file"
           RUBY_VERSION=$(cat .ruby-version)
-          echo "ruby-version=$RUBY_VERSION" >> $GITHUB_ENV
+          safe_version=$(printf '%s' "$RUBY_VERSION" | tr -d '\n\r')
+          echo "ruby-version=$safe_version" >> "$GITHUB_ENV"
         else
           echo "No .ruby-version file found, using default"
         fi
+
     - name: Set up Ruby
-      uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
+      uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
       with:
         ruby-version: ${{ env.ruby-version || inputs.ruby-version }}
         bundler-cache: true
         working-directory: ${{ inputs.workdir }}
+
     - name: Run Standard Ruby with autofix
       id: standardrb
       shell: bash
@@ -60,10 +67,11 @@ runs:
       env:
         AUTOFIX: ${{ inputs.autofix }}
       run: |
-        fix_flag=""
-        if [[ "$AUTOFIX" == 'true' ]]; then fix_flag="--fix"; fi
-        bundle exec standardrb $fix_flag --format github --format "Standard::Formatter"
+        fix_args=()
+        if [[ "$AUTOFIX" == 'true' ]]; then fix_args+=(--fix); fi
+        bundle exec standardrb "${fix_args[@]}" --format github --format "Standard::Formatter"
       continue-on-error: true
+
     - name: Check for modified files
       id: check_changes
       shell: bash
@@ -74,6 +82,7 @@ runs:
         else
           echo "standardrb_autofixes_found=false" >> $GITHUB_ENV
         fi
+
     - name: Commit autofixes
       shell: bash
       if: env.standardrb_autofixes_found == 'true'
@@ -86,12 +95,14 @@ runs:
         git commit -m "Apply Standard Ruby autofixes" || echo "No changes to commit"
         git push
         echo "::endgroup::"
+
     - name: Fail the build if Standard Ruby failed
       shell: bash
       if: ${{ steps.standardrb.outcome == 'failure' }}
       run: |
         echo "::error::Standard Ruby found issues in your code."
         exit 1
+
 branding:
   icon: code
   color: yellow
